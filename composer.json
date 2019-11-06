@@ -1,0 +1,14 @@
+{
+    "name": "thirtybees/maxmindgeoip2",
+    "description": "Geolocation service module for thirtybees",
+    "license": "AFL 3.0",
+    "authors": [
+        {
+            "name": "thirtybees",
+            "email": "contact@thirtybees.com"
+        }
+    ],
+    "require": {
+        "geoip2/geoip2": "~2.0"
+    }
+}

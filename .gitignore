@@ -1,0 +1,6 @@
+vendor
+composer.lock
+/translations/*
+!/translations/index.php
+/config*.xml
+maxmindgeoip2-*.zip
