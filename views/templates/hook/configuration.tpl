@@ -25,7 +25,6 @@
                 {l s='You have valid database file' mod='maxmindgeoip2'}
             </p>
         </div>
-    {else}
         <div class="alert alert-info" style="display: none;"> {* maxmind not alowing downloads for unregistered *}
             <p>
                 {l s='Please download [1]MaxMind database file[/1] and save it to [2]%s[/2]' mod='maxmindgeoip2' sprintf=[$databaseFile] tags=["<a href=$databaseSource>", "<strong>"]}
@@ -37,13 +36,13 @@
 
         <div class="alert alert-info">
             <p>
-                {l s='1. Please go to https://www.maxmind.com and create free account.'}
+                {l s='1. Please go to https://www.maxmind.com and create free account'}
             </p>
             <p>
-                {l s='2. Click on User Icon / MY ACCOUNT'}
+                {l s='2. Login to your account'}
             </p>
             <p>
-                {l s='3. Click on Download Databases'}
+                {l s='3. In "Account Summary" click on Download Databases'}
             </p>
             <p>
                 {l s='4. Search for GeoLite2 City and click on Download GZIP'}
@@ -54,6 +53,14 @@
             <p>
                 {l s='6. Upload it to [2]%s[/2]' mod='maxmindgeoip2' sprintf=[$databaseFile] tags=["<a href=$databaseSource>", "<strong>"]}
             </p>
+            <br>
+        </div>
+
+        <div class="alert alert-info">
+            <p>
+                {l s='To update the database, repeat steps 2-6.'}
+            </p>
+
         </div>
 
     {/if}
