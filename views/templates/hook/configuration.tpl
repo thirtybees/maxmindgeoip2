@@ -26,7 +26,7 @@
             </p>
         </div>
     {else}
-        <div class="alert alert-info">
+        <div class="alert alert-info" style="display: none;"> {* maxmind not alowing downloads for unregistered *}
             <p>
                 {l s='Please download [1]MaxMind database file[/1] and save it to [2]%s[/2]' mod='maxmindgeoip2' sprintf=[$databaseFile] tags=["<a href=$databaseSource>", "<strong>"]}
             </p>
@@ -34,12 +34,34 @@
                 {l s='You can also click on the button bellow to download newest version of the database automatically' mod='maxmindgeoip2'}
             </p>
         </div>
+
+        <div class="alert alert-info">
+            <p>
+                {l s='1. Please go to https://www.maxmind.com and create free account.'}
+            </p>
+            <p>
+                {l s='2. Click on User Icon / MY ACCOUNT'}
+            </p>
+            <p>
+                {l s='3. Click on Download Databases'}
+            </p>
+            <p>
+                {l s='4. Search for GeoLite2 City and click on Download GZIP'}
+            </p>
+            <p>
+                {l s='5. Unpack the file, go to its folder and rename GeoLite2-City.mmdb to: db.mmdb'}
+            </p>
+            <p>
+                {l s='6. Upload it to [2]%s[/2]' mod='maxmindgeoip2' sprintf=[$databaseFile] tags=["<a href=$databaseSource>", "<strong>"]}
+            </p>
+        </div>
+
     {/if}
 
     <div id="maxmind-error" class="alert alert-warning">
     </div>
 
-    <button id="maxmind-download" class="btn btn-primary">
+    <button id="maxmind-download" class="btn btn-primary" style="display: none;">  {* maxmind not alowing downloads for unregistered *}
         <span class="downloading">
             {l s='Please wait, download in process' mod='maxmindgeoip2'}
             <i class="icon-spin icon-spinner"></i>
