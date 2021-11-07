@@ -41,7 +41,7 @@ class MaxMindGeoIP2 extends Module
     {
         $this->name = 'maxmindgeoip2';
         $this->tab = 'administration';
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
         $this->author = 'thirty bees';
         $this->controllers = [];
         $this->bootstrap = true;
