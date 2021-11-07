@@ -29,7 +29,8 @@ use GeoIp2\Exception\AddressNotFoundException;
 class MaxMindGeoIP2 extends Module
 {
 
-    const DB_SOURCE = 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz';
+    const CREATE_ACCOUNT_URL = 'https://www.maxmind.com/en/geolite2/signup';
+    const LOGIN_ACCOUNT_URL = 'https://www.maxmind.com/en/account/login';
 
     /**
      * MaxMindGeoIP2 constructor.
@@ -73,6 +74,8 @@ class MaxMindGeoIP2 extends Module
      *
      * @param array $params
      * @return string | null
+     * @throws Adapter_Exception
+     * @throws PrestaShopException
      */
     public function hookActionGeoLocation($params)
     {
@@ -96,27 +99,34 @@ class MaxMindGeoIP2 extends Module
      */
     public function getContent()
     {
+        if (Tools::isSubmit('uploadDb')) {
+            if (isset($_FILES['db']) && isset($_FILES['db']['tmp_name'])) {
+                $this->uploadDatabase($_FILES['db']['tmp_name'], $_FILES['db']['name']);
+            }
+        }
+
+        $hasDatabase = $this->databaseExits(true);
         $this->context->smarty->assign([
-            'hasDatabase' => $this->databaseExits(true),
-            'databaseFile' => $this->getDatabaseFile(),
-            'databaseSource' => static::DB_SOURCE,
+            'hasDatabase' => $hasDatabase,
+            'fullPath' => $this->getDatabaseFile(),
+            'localPath' => str_replace(_PS_ROOT_DIR_ . '/', '', $this->getDatabaseFile()),
+            'createAccountUrl' => static::CREATE_ACCOUNT_URL,
+            'loginAccountUrl' => static::LOGIN_ACCOUNT_URL,
+            'action' => $_SERVER['REQUEST_URI'],
         ]);
+        if ($hasDatabase) {
+            $metadata = $this->getMetadata();
+            if ($metadata) {
+                $this->context->smarty->assign([
+                    'dbType' => $metadata->databaseType,
+                    'dbTime' => date('Y-m-d H:i:s', $metadata->buildEpoch),
+                    'dbName' => isset($metadata->description['en']) ? $metadata->description['en'] : null,
+                    'dbSize' => $metadata->nodeCount
+                ]);
+            }
+        }
         return $this->display(__FILE__, 'configuration.tpl');
     }
-
-    /**
-     * Ajax handler for database download
-     */
-    public function ajaxProcessDownloadDatabase()
-    {
-        try {
-            $this->downloadDatabase();
-            die(json_encode(['success' => true]));
-        } catch (Exception $e) {
-            die(json_encode(['success' => false, 'error' => $e->getMessage()]));
-        }
-    }
-
 
     /**
      * Returns path to database file
@@ -148,36 +158,38 @@ class MaxMindGeoIP2 extends Module
         }
         return false;
     }
-    
+
+    /**
+     * @return \MaxMind\Db\Reader\Metadata | null
+     */
+    protected function getMetadata()
+    {
+        try {
+            $reader = new Reader($this->getDatabaseFile());
+            return $reader->metadata();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
     /**
      * Helper method to download database from
-     * @throws Exception
+     * @param string $path
+     * @param string $filename
+     * @throws PrestaShopException
      */
-    protected function downloadDatabase()
+    protected function uploadDatabase($path, $filename)
     {
-        $compressed = tempnam(_PS_CACHE_DIR_, 'maxmindgeoip2-gz');
+        if (! preg_match('/\.mmdb$/', $filename)) {
+            throw new PrestaShopException("Invalid file type");
+        }
+
         $uncompressed = tempnam(_PS_CACHE_DIR_, 'maxmindgeoip2-raw');
         try {
-            // download gzip file
-            if (! Tools::copy(static::DB_SOURCE, $compressed)) {
-               throw new PrestaShopException(sprintf('Failed to download database from %s', static::DB_SOURCE));
+            // copy uploaded file
+            if (!Tools::copy($path, $uncompressed)) {
+                throw new PrestaShopException(sprintf('Failed to copy uploaded file %s to %s', $path, $uncompressed));
             }
-
-            // extract downloaded gz file
-            $bufferSize = 4096; // read 4kb at a time
-            $input = gzopen($compressed, 'rb');
-            if (! $input) {
-                throw new PrestaShopException('Failed to read downloaded file');
-            }
-            $out = fopen($uncompressed, 'wb');
-            if (! $out) {
-                throw new PrestaShopException('Failed to create output file');
-            }
-            while (!gzeof($input)) {
-                fwrite($out, gzread($input, $bufferSize));
-            }
-            fclose($out);
-            gzclose($input);
 
             // try to open database to check its validity
             new Reader($uncompressed);
@@ -187,13 +199,12 @@ class MaxMindGeoIP2 extends Module
             if (file_exists($target)) {
                 unlink($target);
             }
-            if (! Tools::copy($uncompressed, $target)) {
+            if (!Tools::copy($uncompressed, $target)) {
                 throw new PrestaShopException(sprintf("Failed to copy database to %s", $target));
             }
+        } catch (\MaxMind\Db\Reader\InvalidDatabaseException $e) {
+            throw new PrestaShopException("Uploaded file is not a valid MaxMind database");
         } finally {
-            if (file_exists($compressed)) {
-                unlink($compressed);
-            }
             if (file_exists($uncompressed)) {
                 unlink($uncompressed);
             }
